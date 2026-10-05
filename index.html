@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Galaxia Amarilla</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+        
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Contenedor del reproductor de música */
+        #audio-container {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 350px;
+            z-index: 10;
+            background: rgba(20, 20, 20, 0.7);
+            border: 1px solid rgba(255, 187, 0, 0.5);
+            border-radius: 30px;
+            padding: 5px 15px;
+            box-shadow: 0 0 20px rgba(255, 166, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        audio {
+            width: 100%;
+            height: 40px;
+            outline: none;
+            filter: invert(0.9) sepia(1) saturate(5) hue-rotate(350deg) brightness(0.8);
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+            font-size: 14px;
+            text-shadow: 0 0 5px #ffaa00;
+            z-index: 10;
+        }
+    </style>
+    <!-- Importar Three.js y OrbitControls desde CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="info">Arrastra para rotar la galaxia • Usa la rueda para acercar/alejar</div>
+    
+    <div id="audio-container">
+        <audio controls loop>
+            <!-- Asegúrate de colocar tu canción en la misma carpeta o actualizar esta ruta -->
+            <source src="/Pagina de figma/Regalo cumpleaños/XXXTENTACION - Triumph (Audio).mp3" type="audio/mpeg">
+            Tu navegador no soporta el audio.
+        </audio>
+    </div>
+    
+    <script>
+        // 1. Configuración Básica de la Escena
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
+        camera.position.set(0, 200, 500);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 1.5;
+
+        // 2. Núcleo de la Galaxia
+        const coreGeometry = new THREE.SphereGeometry(30, 32, 32);
+        const coreMaterial = new THREE.MeshBasicMaterial({ color: 0xffdd44, transparent: true, opacity: 0.9 });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        scene.add(core);
+
+        const haloGeometry = new THREE.SphereGeometry(45, 32, 32);
+        const haloMaterial = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
+        const halo = new THREE.Mesh(haloGeometry, haloMaterial);
+        scene.add(halo);
+
+        // 3. Sistema de Partículas (Estrellas)
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 3000;
+        const starPositions = new Float32Array(starCount * 3);
+        const starColors = new Float32Array(starCount * 3);
+        const color1 = new THREE.Color(0xffcc00);
+        const color2 = new THREE.Color(0xff3300);
+
+        for (let i = 0; i < starCount; i++) {
+            const r = Math.random() * 800;
+            const theta = 2 * Math.PI * Math.random();
+            const phi = Math.acos(2 * Math.random() - 1);
+            
+            const x = r * Math.sin(phi) * Math.cos(theta);
+            const y = (r * Math.sin(phi) * Math.sin(theta)) * 0.2; 
+            const z = r * Math.cos(phi);
+
+            starPositions[i * 3] = x;
+            starPositions[i * 3 + 1] = y;
+            starPositions[i * 3 + 2] = z;
+
+            const mixedColor = color1.clone().lerp(color2, Math.random());
+            starColors[i * 3] = mixedColor.r;
+            starColors[i * 3 + 1] = mixedColor.g;
+            starColors[i * 3 + 2] = mixedColor.b;
+        }
+
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+        const starMaterial = new THREE.PointsMaterial({ size: 2, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+
+        // 4. Textos e Imágenes para Dayana
+        const galaxyGroup = new THREE.Group();
+        scene.add(galaxyGroup);
+        
+        const phrases = [
+            "Te amoooo", "Amor hermoso", "Siempre estare contigo", "Para Dayana",
+            "Eres mi luz", "Mi corazón", "Flores para ti", "Mi universo",
+            "Eres especial", "Siempre juntos", "D & S", "Eres mi galaxia entera", "Jamas te voy a Dejaaar JAMAAAS"
+        ];
+
+        function createTextSprite(text) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 128;
+            
+            context.font = "bold 32px 'Segoe UI', Arial";
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.shadowColor = "rgba(255, 170, 0, 0.8)";
+            context.shadowBlur = 10;
+            context.fillStyle = "#ffffff";
+            context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(100, 25, 1);
+            return sprite;
+        }
+
+        function createImageSprite(url) {
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load(url);
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(40, 40, 1);
+            return sprite;
+        }
+
+        for (let i = 0; i < 80; i++) {
+            const isText = Math.random() > 0.15;
+            let sprite;
+            if (isText) {
+                sprite = createTextSprite(phrases[Math.floor(Math.random() * phrases.length)]);
+            } else {
+                const placeholderPics = [
+                    'img/1.jpeg', 
+                    'img/2.jpeg', 
+                    'img/3.jpeg', 
+                    'img/4.jpeg', 
+                    'img/5.jpeg', 
+                    'img/6.jpeg', 
+                    'img/7.jpeg', 
+                    'img/8.jpeg', 
+                    'img/9.jpeg', 
+                    'img/10.jpeg', 
+                    'img/11.jpeg', 
+                    'img/12.jpeg', 
+                    'img/13.jpeg', 
+                    'img/14.jpeg', 
+                    'img/15.jpeg', 
+                    
+                ];
+                sprite = createImageSprite(placeholderPics[Math.floor(Math.random() * placeholderPics.length)]);
+            }
+            const radius = 50 + Math.random() * 350;
+            const angle = Math.random() * Math.PI * 2;
+            const height = (Math.random() - 0.5) * (150 - (radius * 0.2)); 
+            sprite.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+            galaxyGroup.add(sprite);
+        }
+
+        // 5. Redimensionar ventana
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 6. Animación
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+            stars.rotation.y = elapsedTime * 0.05;
+            const scale = 1 + Math.sin(elapsedTime * 2) * 0.05;
+            core.scale.set(scale, scale, scale);
+            halo.scale.set(scale * 1.1, scale * 1.1, scale * 1.1);
+            controls.update();
+            
+            // Orientar sprites a la cámara
+            galaxyGroup.children.forEach(child => child.quaternion.copy(camera.quaternion));
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
